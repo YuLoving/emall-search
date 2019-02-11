@@ -1,0 +1,58 @@
+package cn.e3mall.search.service.impl;
+
+import org.apache.solr.client.solrj.SolrQuery;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import cn.e3mall.common.pojo.SearchResult;
+import cn.e3mall.search.dao.Searchdao;
+import cn.e3mall.search.service.SearchService;
+
+/**  
+
+* <p>Title: SearchServiceImpl</p>  
+
+* <p>Description: 商品搜索service</p>  
+
+* @author 赵天宇
+
+* @date 2018年11月28日  
+
+*/
+@Service
+public class SearchServiceImpl implements SearchService {
+	@Autowired
+	private Searchdao searchdao;
+	
+	@Override
+	public SearchResult search(String keyword, int page, int rows) throws Exception {
+		//创建一个Solrquery对象
+			SolrQuery query = new SolrQuery();
+		//设置查询条件
+			query.setQuery(keyword);
+		//设置分页条件
+			if(page<=0){page=1;}
+			query.setStart((page-1)*rows);
+			query.setRows(rows);
+			
+		//设置默认搜索域
+			query.set("df", "item_title");
+		//开启高亮显示、 高亮显示域、高亮显示的前缀和后缀
+			query.setHighlight(true);
+			query.addHighlightField("item_title");
+			query.setHighlightSimplePre("<em style=\"color:red\">");
+			query.setHighlightSimplePost("</em>");
+		//调用dao执行查询
+			SearchResult searchResult = searchdao.search(query);
+		//计算总页数
+			long recordCount = searchResult.getRecordCount();//总记录数
+			int totalpage=(int) (recordCount/rows);
+			if (recordCount%rows >0) {totalpage++;}
+			
+			searchResult.setTatalPages(totalpage);
+			
+		//返回结果
+		return searchResult;
+	}
+
+}
